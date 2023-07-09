@@ -1,11 +1,12 @@
 import { WebSocket } from 'ws';
 
 export type Player = {
+  id?: number;
   name: string;
   password: string;
 };
 
 export type activePlayer = {
-  playerIndex: number;
+  player: Player;
   ws: WebSocket;
 };

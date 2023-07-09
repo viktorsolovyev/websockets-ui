@@ -1,26 +1,44 @@
 import { WebSocket } from 'ws';
 import { Player, activePlayer } from '../types/Player.js';
+import { Room } from '../types/Room.js';
 
 export const players: Player[] = [];
-export const activePlayers: activePlayer[] = [];
+export let activePlayers: activePlayer[] = [];
+export const rooms: Room[] = [];
 
-// export const removeUserFromDbById = (id: string): void => {
-//   users = users.filter((element) => element.id !== id);
-// };
-
-export const addPlayerToDb = (player: Player): number => {
-  players.push(player);
-  return players.length - 1;
+// Player
+export const addPlayerToDb = (player: Player): Player => {
+  const newPlayer = { id: players.length, name: player.name, password: player.password };
+  players.push(newPlayer);
+  return newPlayer;
 };
 
-export const addActivePlayerToDb = (playerIndex: number, ws: WebSocket): void => {
-  activePlayers.push({ playerIndex, ws });
+export const getActivePlayersFromDb = (): activePlayer[] => {
+  return activePlayers;
 };
 
-// export const changeUserByIdInDb = (user: Player, changedUser: Player): Player => {
-//   const idx = users.findIndex((element) => element.id === user.id);
-//   users[idx].username = changedUser.username;
-//   users[idx].age = changedUser.age;
-//   users[idx].hobbies = changedUser.hobbies;
-//   return users[idx];
-// };
+export const getActivePlayerByWsFromDb = (ws: WebSocket): activePlayer | undefined => {
+  return activePlayers.find((element) => element.ws === ws);
+};
+
+export const addActivePlayerToDb = (player: Player, ws: WebSocket): void => {
+  activePlayers.push({ player, ws });
+};
+
+export const removeActivePlayerFromDb = (ws: WebSocket): void => {
+  activePlayers = activePlayers.filter((element) => element.ws !== ws);
+};
+
+// Room
+export const addRoomToDb = (): Room => {
+  const newRoom = {
+    roomId: rooms.length,
+    roomUsers: [],
+  };
+  rooms.push(newRoom);
+  return newRoom;
+};
+
+export const getRoomsWithOnePlayerInsideFromDb = (): Room[] => {
+  return rooms.filter((element) => element.roomUsers.length === 1);
+};
