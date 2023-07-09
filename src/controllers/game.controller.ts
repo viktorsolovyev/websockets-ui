@@ -29,3 +29,7 @@ export const addRoom = () => {
 export const getRoomsWithOnePlayerInside = () => {
   return db.getRoomsWithOnePlayerInsideFromDb();
 };
+
+export const addPlayerToRoom = (player: Player, indexRoom: number) => {
+  return db.addPlayerToRoomToDb(player, indexRoom);
+};

@@ -25,21 +25,6 @@ gameEventEmitter.on('reg', (ws, message) => {
   gameEventEmitter.emit('update_room');
 });
 
-gameEventEmitter.on('update_room', () => {
-  const activePlayers = Game.getActivePlayers();
-  const halfRooms = Game.getRoomsWithOnePlayerInside();
-
-  activePlayers.forEach((activePlayer) => {
-    activePlayer.ws.send(
-      JSON.stringify({
-        type: 'update_room',
-        data: JSON.stringify(halfRooms),
-        id: 0,
-      }),
-    );
-  });
-});
-
 gameEventEmitter.on('create_room', (ws) => {
   const currentActivePlayer = Game.getActivePlayerByWs(ws);
   const newRoom = Game.addRoom();
@@ -50,6 +35,30 @@ gameEventEmitter.on('create_room', (ws) => {
   gameEventEmitter.emit('update_room');
 });
 
+gameEventEmitter.on('add_user_to_room', (ws, message) => {
+  const room = JSON.parse(message.data);
+  const currentActivePlayer = Game.getActivePlayerByWs(ws);
+  if (currentActivePlayer?.player) Game.addPlayerToRoom(currentActivePlayer?.player, room.indexRoom);
+
+  gameEventEmitter.emit('update_room');
+//   gameEventEmitter.emit('create_game');
+});
+
+gameEventEmitter.on('update_room', () => {
+    const activePlayers = Game.getActivePlayers();
+    const halfRooms = Game.getRoomsWithOnePlayerInside();
+  
+    activePlayers.forEach((activePlayer) => {
+      activePlayer.ws.send(
+        JSON.stringify({
+          type: 'update_room',
+          data: JSON.stringify(halfRooms),
+          id: 0,
+        }),
+      );
+    });
+  });
+  
 gameEventEmitter.on('close_connection', (ws) => {
   Game.removeActivePlayer(ws);
 });

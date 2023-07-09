@@ -42,3 +42,12 @@ export const addRoomToDb = (): Room => {
 export const getRoomsWithOnePlayerInsideFromDb = (): Room[] => {
   return rooms.filter((element) => element.roomUsers.length === 1);
 };
+
+export const addPlayerToRoomToDb = (player: Player, indexRoom: number): void => {
+  const room = rooms.find((element) => element.roomId === indexRoom);
+  if (room)
+    room.roomUsers.push({
+      name: player.name,
+      index: player.id,
+    });
+};
