@@ -21,7 +21,6 @@ gameEventEmitter.on('reg', (ws, message) => {
       id: 0,
     }),
   );
-
   gameEventEmitter.emit('update_room');
 });
 
@@ -36,29 +35,79 @@ gameEventEmitter.on('create_room', (ws) => {
 });
 
 gameEventEmitter.on('add_user_to_room', (ws, message) => {
-  const room = JSON.parse(message.data);
+  const data = JSON.parse(message.data);
+  let room;
   const currentActivePlayer = Game.getActivePlayerByWs(ws);
-  if (currentActivePlayer?.player) Game.addPlayerToRoom(currentActivePlayer?.player, room.indexRoom);
-
+  if (currentActivePlayer?.player) {
+    room = Game.addPlayerToRoom(currentActivePlayer?.player, data.indexRoom);
+  }
   gameEventEmitter.emit('update_room');
-//   gameEventEmitter.emit('create_game');
+  if (room) {
+    gameEventEmitter.emit('create_game', room?.roomUsers);
+  }
 });
 
 gameEventEmitter.on('update_room', () => {
-    const activePlayers = Game.getActivePlayers();
-    const halfRooms = Game.getRoomsWithOnePlayerInside();
-  
-    activePlayers.forEach((activePlayer) => {
-      activePlayer.ws.send(
+  const activePlayers = Game.getAllActivePlayers();
+  const halfRooms = Game.getRoomsWithOnePlayerInside();
+  activePlayers.forEach((activePlayer) => {
+    activePlayer.ws.send(
+      JSON.stringify({
+        type: 'update_room',
+        data: JSON.stringify(halfRooms),
+        id: 0,
+      }),
+    );
+  });
+});
+
+gameEventEmitter.on('create_game', (roomUsers) => {
+  const ids = roomUsers.map((element: { name?: string | undefined; index?: number | undefined }) => element.index);
+  const activePlayers = Game.getActivePlayersByIds(ids);
+  const newGame = Game.addGame();
+  activePlayers.forEach((activePlayer) => {
+    newGame.board.push({ player: activePlayer, ships: [] });
+    activePlayer.ws.send(
+      JSON.stringify({
+        type: 'create_game',
+        data: JSON.stringify({
+          idGame: newGame.id,
+          idPlayer: activePlayer.player.id,
+        }),
+        id: 0,
+      }),
+    );
+  });
+});
+
+gameEventEmitter.on('add_ships', (ws, message) => {
+  const data = JSON.parse(message.data);
+  const game = Game.addShipsToBoard(data.gameId, data.indexPlayer, data.ships);
+  if (game?.board[0].ships.length && game?.board[1].ships.length) {
+    game.board.forEach((element) => {
+      element.player.ws.send(
         JSON.stringify({
-          type: 'update_room',
-          data: JSON.stringify(halfRooms),
+          type: 'start_game',
+          data: JSON.stringify({
+            ships: element.ships,
+            currentPlayerIndex: element.player.player.id,
+          }),
+          id: 0,
+        }),
+      );
+      element.player.ws.send(
+        JSON.stringify({
+          type: 'turn',
+          data: JSON.stringify({
+            currentPlayer: element.player.player.id,
+          }),
           id: 0,
         }),
       );
     });
-  });
-  
+  }
+});
+
 gameEventEmitter.on('close_connection', (ws) => {
   Game.removeActivePlayer(ws);
 });
