@@ -7,22 +7,47 @@ class GameEventEmitter extends EventEmitter {}
 export const gameEventEmitter = new GameEventEmitter();
 
 gameEventEmitter.on('reg', (ws, message) => {
+  let error = false;
+  let errorText = '';
+  let index;
+
   const player: Player = JSON.parse(message.data);
-  const newPlayer = Game.addPlayer(player);
-  Game.addActivePlayer(newPlayer, ws);
+  const existingPlayer = Game.getPlayerByName(player.name);
+  if (existingPlayer && existingPlayer.password !== player.password) {
+    error = true;
+    errorText = 'Invalid password';
+  }
+  if (!existingPlayer) {
+    const newPlayer = Game.addPlayer(player);
+    index = newPlayer.id;
+    Game.addActivePlayer(newPlayer, ws);
+  } else if (existingPlayer && !error) {
+    index = existingPlayer.id;
+    Game.addActivePlayer(existingPlayer, ws);
+  }
+
   ws.send(
     JSON.stringify({
       type: 'reg',
       data: JSON.stringify({
         name: player.name,
-        index: newPlayer.id,
-        error: false,
-        errorText: '',
+        index: index,
+        error: error,
+        errorText: errorText,
       }),
       id: 0,
     }),
   );
-  gameEventEmitter.emit('update_room');
+  if (!error) {
+    gameEventEmitter.emit('update_room');
+    ws.send(
+      JSON.stringify({
+        type: 'update_winners',
+        data: JSON.stringify(Game.getAllWinners()),
+        id: 0,
+      }),
+    );
+  }
 });
 
 gameEventEmitter.on('create_room', (ws) => {

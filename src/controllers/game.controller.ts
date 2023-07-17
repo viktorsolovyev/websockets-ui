@@ -9,6 +9,10 @@ export const addPlayer = (player: Player) => {
   return db.addPlayerToDb(player);
 };
 
+export const getPlayerByName = (name: string) => {
+  return db.getPlayerByNameFromDb(name);
+};
+
 export const getAllActivePlayers = () => {
   return db.getAllActivePlayersFromDb();
 };
@@ -108,6 +112,17 @@ export const AttackEvent = (message: { data: string }, isRandomAtack = false) =>
           }),
         );
       });
+
+      const allActivePlayers = getAllActivePlayers();
+      allActivePlayers.forEach((element) => {
+        element.ws.send(
+          JSON.stringify({
+            type: 'update_winners',
+            data: JSON.stringify(getAllWinners()),
+            id: 0,
+          }),
+        );
+      });
     }
   }
 };
@@ -122,4 +137,12 @@ export const getGameById = (gameId: number) => {
 
 export const getPositionForRandomAttack = (game: Game, playerId: number) => {
   return db.getPositionForRandomAttackFromDb(game, playerId);
+};
+
+export const addWinner = (name: string) => {
+  return db.addWinnerToDb(name);
+};
+
+export const getAllWinners = () => {
+  return db.getAllWinnersFromDb();
 };

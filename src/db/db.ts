@@ -1,18 +1,23 @@
 import { WebSocket } from 'ws';
 import { Cell } from '../types/Cell.js';
-import { Player, activePlayer, Room, Ship, Game, Attack } from '../types/index.js';
+import { Player, activePlayer, Room, Ship, Game, Attack, Winner } from '../types/index.js';
 import { arrayRandElement } from '../utils/utils.js';
 
 export const players: Player[] = [];
 export let activePlayers: activePlayer[] = [];
 export const rooms: Room[] = [];
 export const games: Game[] = [];
+export const winners: Winner[] = [];
 
 // Player
 export const addPlayerToDb = (player: Player): Player => {
   const newPlayer = { id: players.length, name: player.name, password: player.password };
   players.push(newPlayer);
   return newPlayer;
+};
+
+export const getPlayerByNameFromDb = (name: string): Player | undefined => {
+  return players.find((player) => player.name === name);
 };
 
 export const getAllActivePlayersFromDb = (): activePlayer[] => {
@@ -81,7 +86,7 @@ export const addShipsToBoardToDb = (gameId: number, playerId: number, ships: Shi
   const boardItem = game?.board.find((element) => element.player.player.id === playerId);
   if (boardItem) {
     ships.forEach((item) => {
-      item.health = item.length; // getHealthShipByType(item.type);
+      item.health = item.length;
     });
     boardItem.ships = ships;
     boardItem.ownField = createGameField(boardItem.ships);
@@ -120,6 +125,7 @@ export const setAttackToDb = (
           });
           if (!liveShips.length) {
             isFinish = true;
+            addWinnerToDb(ownBoardItem.player.player.name);
           }
           attackStatus = 'killed';
           const startX = enemyCell.ship.position.x - 1 < 0 ? 0 : enemyCell.ship.position.x - 1;
@@ -159,7 +165,12 @@ export const setAttackToDb = (
       attacks.push({ status: attackStatus, x, y });
     }
   }
-  return { attackStatus: attackStatus, attacks: attacks, isFinish: isFinish, winPlayer: (isFinish ? playerId: undefined)};
+  return {
+    attackStatus: attackStatus,
+    attacks: attacks,
+    isFinish: isFinish,
+    winPlayer: isFinish ? playerId : undefined,
+  };
 };
 
 const createGameField = (ships?: Ship[]): Cell[] => {
@@ -211,4 +222,18 @@ export const getPositionForRandomAttackFromDb = (game: Game, playerId: number): 
     result.y = randomCell.y;
   }
   return { x: result.x, y: result.y };
+};
+
+// Winners
+export const addWinnerToDb = (name: string) => {
+  const winnerFromDb = winners.find((winner) => winner.name === name);
+  if (winnerFromDb) {
+    winnerFromDb.wins += 1;
+  } else {
+    winners.push({ name: name, wins: 1 });
+  }
+};
+
+export const getAllWinnersFromDb = (): Winner[] => {
+  return winners;
 };
