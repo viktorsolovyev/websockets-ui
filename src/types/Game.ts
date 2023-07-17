@@ -1,7 +1,7 @@
-import { activePlayer } from './Player.js';
-import { Ship } from './Ship.js';
+import { BoardItem } from './BoardItem.js';
 
 export type Game = {
   id: number;
-  board: { player: activePlayer; ships: Ship[] }[];
+  board: BoardItem[];
+  currentTurnIndexPlayer: number;
 };

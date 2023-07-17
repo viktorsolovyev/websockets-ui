@@ -1,6 +1,7 @@
 import { EventEmitter } from 'node:events';
 import { Player } from '../types/Player.js';
 import * as Game from '../controllers/game.controller.js';
+import { BoardItem } from '../types/BoardItem.js';
 
 class GameEventEmitter extends EventEmitter {}
 export const gameEventEmitter = new GameEventEmitter();
@@ -66,7 +67,13 @@ gameEventEmitter.on('create_game', (roomUsers) => {
   const activePlayers = Game.getActivePlayersByIds(ids);
   const newGame = Game.addGame();
   activePlayers.forEach((activePlayer) => {
-    newGame.board.push({ player: activePlayer, ships: [] });
+    const boardItem: BoardItem = {
+      player: activePlayer,
+      ships: [],
+      ownField: [],
+      enemyField: [],
+    };
+    newGame.board.push(boardItem);
     activePlayer.ws.send(
       JSON.stringify({
         type: 'create_game',
@@ -99,13 +106,21 @@ gameEventEmitter.on('add_ships', (ws, message) => {
         JSON.stringify({
           type: 'turn',
           data: JSON.stringify({
-            currentPlayer: element.player.player.id,
+            currentPlayer: game.board[game.currentTurnIndexPlayer].player.player.id,
           }),
           id: 0,
         }),
       );
     });
   }
+});
+
+gameEventEmitter.on('attack', (ws, message) => {
+  Game.AttackEvent(message);
+});
+
+gameEventEmitter.on('randomAttack', (ws, message) => {
+  Game.AttackEvent(message, true);
 });
 
 gameEventEmitter.on('close_connection', (ws) => {
